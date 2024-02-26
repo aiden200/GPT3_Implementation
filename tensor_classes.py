@@ -44,11 +44,17 @@ class Mini_T:
     def __rmul__(self, item): # item *self
         return self * item
     
+    def __radd__(self, item):
+        return self + item
+    
     def __neg__(self): # -self
         return self * -1
     
     def __sub__(self, item):
-        return self + -item
+        return self + (-item)
+
+    def __rsub__(self, item):
+        return item + -(self)
 
     def __pow__(self, item):
         assert isinstance(item, (int, float)), "Only supporting int/float"
@@ -100,15 +106,58 @@ class Mini_T:
         for node in reversed(g):
             node._backward()
 
+import random
 
-##Checking
+class Neuron:
+    def __init__(self, nin):
+        self.w = [Mini_T(random.uniform(-1, 1)) for _ in range(nin)]
+        self.b = Mini_T(random.uniform(-1,1))
     
-a = Mini_T(3)
-b = Mini_T(4.0)
-c = Mini_T(-3)
+    def __call__(self, x):
+        
+        act = sum((wi*xi for wi, xi in zip(self.w, x)), self.b)
+        out = act.tanh()
+        return out
+    
+    def parameters(self):
+        return self.w + [self.b]
 
-print(a * b + c)
+class Layer:
+    def __init__(self, nin, nout):
+        self.neurons = [Neuron(nin) for _ in range(nout)]
+    
+    def __call__(self, x):
+        outs = [n(x) for n in self.neurons]
+        return outs[0] if len(outs) == 1 else outs
 
-o = a * b  +c
-o.backward()
-print(a.grad)
+class MLP:
+    def __init__(self, nin, nouts ):
+        sz = [nin] + nouts
+        self.layers = [Layer(sz[i], sz[i+1]) for i in range(len(nouts))]
+
+    def __call__(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+n = MLP(3, [4, 4, 1])
+
+xs = [
+    [2.0, 3.0, -1.0],
+    [3.0, -1.0, 0.5],
+    [0.5, 1.0, 1.0],
+    [1.0, 1.0, -1.0],
+]
+
+ys = [1.0, -1.0, -1.0, 1.0]
+ypred = [n(x) for x in xs]
+print(ypred)
+
+loss = sum((y-yhat)**2 for y, yhat in zip(ys, ypred))
+print(f"Loss: {loss}")
+
+print(n.layers[0].neurons[0].w[0].grad)
+loss.backward()
+print(n.layers[0].neurons[0].w[0].grad)
+
+
