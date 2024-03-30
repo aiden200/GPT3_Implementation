@@ -3,14 +3,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class BigramModel(nn.Module):
-    def __init__(self, vocab_size):
+    def __init__(self, vocab_size, embed_size, block_size, device):
         super().__init__()
-        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
-    
-    def forward(self, idx, targets=None):
-        logits = self.token_embedding_table(idx) # (B, T, C) T here is the block_size
+        self.device = device
+        self.token_embedding_table = nn.Embedding(vocab_size, embed_size)
+        self.pe = nn.Embedding(block_size, embed_size) # for each char, add positional encoding to embed
+        self.lm_head = nn.Linear(embed_size, vocab_size)
 
-        # C is all of the given chars
+        
+    def forward(self, idx, targets=None):
+        tok_embeddings = self.token_embedding_table(idx) # (B, T, E) T here is the block_size
+        
+        pe = self.pe(torch.arrange(idx.shape[1], device=self.device)) # (T, E), B gets broadcasted from pe + x
+        
+        tok_embeddings = tok_embeddings + pe
+        
+        logits = self.lm_head(tok_embeddings) # (B, T, V)
+        
+
+        # C is vocab size
         B, T, C = logits.shape
 
         if targets == None:
