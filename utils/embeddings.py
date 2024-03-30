@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from src.attention_blocks import Attention_Block
+from src.attention_blocks import Multi_head_attention
 
 class BigramModel(nn.Module):
-    def __init__(self, vocab_size, embed_size, block_size, attention_hidden_dim, device):
+    def __init__(self, vocab_size, embed_size, block_size, attention_hidden_dim, attention_heads, device):
         super().__init__()
         
         self.block_size = block_size # block size is maximum length
@@ -12,7 +12,7 @@ class BigramModel(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, embed_size)
         self.pe = nn.Embedding(block_size, embed_size) # for each char, add positional encoding to embed
         
-        self.self_attention = Attention_Block(attention_hidden_dim, embed_size, block_size)
+        self.self_attention = Multi_head_attention(attention_hidden_dim//attention_heads, embed_size, block_size, attention_heads)
         self.lm_head = nn.Linear(attention_hidden_dim, vocab_size)
 
         

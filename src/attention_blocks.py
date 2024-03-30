@@ -3,6 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class Multi_head_attention:
+    def __init__(self, hidden_dim, token_embed_dim, max_length, attention_heads) -> None:
+        self.heads = nn.ModuleList(
+            [Attention_Block(hidden_dim, token_embed_dim, max_length) for _ in range(attention_heads)]
+            )
+    
+    def forward(self, x):
+        
+        # heads * (B, T, H) We want to concat in the H dimension.
+        return torch.cat([h[x] for h in self.heads], dim = -1)
+        
+
+
 class Attention_Block:
     # one head of self attention
     def __init__(self, hidden_dim, token_embed_dim, block_size):
