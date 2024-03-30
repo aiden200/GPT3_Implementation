@@ -1,14 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from src.attention_blocks import Attention_Block
 
 class BigramModel(nn.Module):
-    def __init__(self, vocab_size, embed_size, block_size, device):
+    def __init__(self, vocab_size, embed_size, block_size, attention_hidden_dim, device):
         super().__init__()
+        
+        self.block_size = block_size # block size is maximum length
         self.device = device
         self.token_embedding_table = nn.Embedding(vocab_size, embed_size)
         self.pe = nn.Embedding(block_size, embed_size) # for each char, add positional encoding to embed
-        self.lm_head = nn.Linear(embed_size, vocab_size)
+        
+        self.self_attention = Attention_Block(attention_hidden_dim, embed_size, block_size)
+        self.lm_head = nn.Linear(attention_hidden_dim, vocab_size)
 
         
     def forward(self, idx, targets=None):
@@ -17,8 +22,9 @@ class BigramModel(nn.Module):
         pe = self.pe(torch.arrange(idx.shape[1], device=self.device)) # (T, E), B gets broadcasted from pe + x
         
         tok_embeddings = tok_embeddings + pe
+        attention = self.self_attention(tok_embeddings)
         
-        logits = self.lm_head(tok_embeddings) # (B, T, V)
+        logits = self.lm_head(attention) # (B, T, V)
         
 
         # C is vocab size
@@ -39,7 +45,10 @@ class BigramModel(nn.Module):
     def generate(self, idx, max_new_tokens):
         for _ in range(max_new_tokens):
             #predictions
-            logits, loss =self(idx)
+            
+            idx_trimmed = idx[:, -self.block_size:] # don't let it go over max length
+            
+            logits, loss =self(idx_trimmed)
             
             last_char_logits = logits[:, -1, :] # last character
 
