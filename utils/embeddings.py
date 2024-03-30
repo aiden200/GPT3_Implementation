@@ -38,7 +38,7 @@ class BigramModel(nn.Module):
 
             idx = torch.cat((idx, idx_next), dim=1) # We add to the time (B, T +1) 
         
-        return idx # We return (B, T + max_new_tokens) 
+        return idx # We return (B, T + max_new_tokens)  
 
 
  
