@@ -4,8 +4,8 @@ import torch.nn.functional as F
 from src.transformer_blocks import Multi_head_attention, FeedForward
 
 
-class BigramModel(nn.Module):
-    def __init__(self, vocab_size, embed_size, block_size, attention_hidden_dim, attention_heads, ffn_hidden_dim, ffn_num_layers, device):
+class Transformer_Model(nn.Module):
+    def __init__(self, vocab_size, embed_size, block_size, attention_heads, dropout, device):
         super().__init__()
 
         self.block_size = block_size  # block size is maximum length
@@ -14,9 +14,11 @@ class BigramModel(nn.Module):
         # for each char, add positional encoding to embed
         self.pe = nn.Embedding(block_size, embed_size)
 
-        self.self_attention = Multi_head_attention(
-            embed_size//attention_heads, embed_size, block_size, attention_heads)
-        self.ffn = FeedForward(embed_size, ffn_num_layers)
+        self.masked_mh_self_attention = Multi_head_attention(
+            embed_size//attention_heads, embed_size, block_size, attention_heads, dropout)
+        self.attn_norm = nn.LayerNorm(embed_size)
+        self.ffn = FeedForward(embed_size)
+        self.ffn_norm = nn.LayerNorm(embed_size)
         self.lm_head = nn.Linear(embed_size, vocab_size)
 
     def forward(self, idx, targets=None):
@@ -31,14 +33,19 @@ class BigramModel(nn.Module):
 
         # Masked multi-head self attention
         resid_x = x
-        x = self.self_attention(x)
+        x = self.masked_mh_self_attention(x)
 
         # Add & Norm
-        x = resid_x + x
-        nn.LayerNorm
+        x = self.attn_norm(x)
+        x = x + resid_x
 
         # Feedforward Network
+        resid_x = x
         x = self.ffn(x)  # (B, T, H) where h is hidden dim for
+
+        # add & norm
+        x = self.ffn_norm(x)
+        x = x + resid_x
 
         logits = self.lm_head(x)  # (B, T, V)
 
