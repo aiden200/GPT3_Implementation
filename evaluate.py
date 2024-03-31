@@ -1,6 +1,6 @@
 from utils.vanilla_tokenizers import extract_encoder_decoder, test_encoder_decoder
 from utils.split_data import get_batch
-from utils.embeddings import BigramModel
+from model.bigram_model import BigramModel
 from tqdm import tqdm
 import torch
 
@@ -34,14 +34,19 @@ def train():
 
 
 
-    block_size = 8 # x = 0 y = 1, x = 0, 1 y = 2, x = 0,1,2 y =3 ... so on till x is len 8
+    block_size = 30 # x = 0 y = 1, x = 0, 1 y = 2, x = 0,1,2 y =3 ... so on till x is len 8
     batch_size = 32
     lr = 1e-3
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     epochs = 10000
     eval_interval = 500
+    embed_size = 128
+    attention_hidden_dim = 128
+    attention_heads = 6
+    ffn_hidden_dim = 128
+    ffn_layers = 2
 
-    m = BigramModel(vocab_size)
+    m = BigramModel(vocab_size, embed_size, block_size, attention_hidden_dim, attention_heads, ffn_hidden_dim, ffn_layers, device)
     m = m.to(device)
 
     optimizer = torch.optim.AdamW(m.parameters(), lr=lr)
