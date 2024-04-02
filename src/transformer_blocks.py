@@ -4,6 +4,61 @@ import torch.nn.functional as F
 import math
 
 
+class PositionalEncoding(nn.Module):
+    def __init__(self, embed_dim: int, drop_rate=0.1, max_len=5000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=drop_rate)
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, embed_dim, 2) * (-math.log(10000.0) / embed_dim))
+        pe = torch.zeros(1, max_len, embed_dim)
+        pe[0, :, 0::2] = torch.sin(position * div_term)
+        pe[0, :, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+
+        x = x + self.pe[:, :x.size(1)]
+        return self.dropout(x)
+    
+
+class Transformer_block(nn.Module):
+    def __init__(self, embed_size, block_size, attention_heads, dropout, device):
+        super().__init__()
+
+        self.block_size = block_size  # block size is maximum length
+        self.device = device
+
+        # for each char, add positional encoding to embed
+        self.pe = nn.Embedding(block_size, embed_size)
+
+        self.masked_mh_self_attention = Multi_head_attention(
+            embed_size//attention_heads, embed_size, block_size, attention_heads, dropout)
+        self.attn_norm = nn.LayerNorm(embed_size)
+        self.ffn = FeedForward(embed_size)
+        self.ffn_norm = nn.LayerNorm(embed_size)
+
+    def forward(self, x):
+        # Masked multi-head self attention
+        resid_x = x
+        x = self.masked_mh_self_attention(x)
+
+        # Add & Norm
+        x = x + resid_x
+        x = self.attn_norm(x)
+
+        # Feedforward Network
+        resid_x = x
+        x = self.ffn(x)  # (B, T, H) where h is hidden dim for
+
+        # add & norm
+        x = x + resid_x
+        out = self.ffn_norm(x)
+
+        return out
+
+
+
+
 class Multi_head_attention(nn.Module):
     def __init__(self, hidden_dim, token_embed_dim, max_length, attention_heads, dropout, masked=True) -> None:
         super().__init__()

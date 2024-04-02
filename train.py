@@ -1,6 +1,6 @@
 from utils.vanilla_tokenizers import extract_encoder_decoder, test_encoder_decoder
 from utils.split_data import get_batch
-from model.bigram_model import Transformer_Model
+from model.bigram_model import BigramModel
 from tqdm import tqdm
 import torch
 
@@ -41,7 +41,7 @@ def train():
     attention_heads = 6
     dropout = 0.2
 
-    m = Transformer_Model(vocab_size, embed_size, max_length,
+    m = BigramModel(vocab_size, embed_size, max_length,
                           attention_heads, dropout, device)
     m = m.to(device)
 

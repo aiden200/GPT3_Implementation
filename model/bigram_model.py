@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from src.transformer_blocks import Multi_head_attention, FeedForward
+from src.transformer_blocks import PositionalEncoding, Transformer_block
 
 
-class Transformer_Model(nn.Module):
+class BigramModel(nn.Module):    
     def __init__(self, vocab_size, embed_size, block_size, attention_heads, dropout, device):
         super().__init__()
 
@@ -12,13 +12,8 @@ class Transformer_Model(nn.Module):
         self.device = device
         self.token_embedding_table = nn.Embedding(vocab_size, embed_size)
         # for each char, add positional encoding to embed
-        self.pe = nn.Embedding(block_size, embed_size)
-
-        self.masked_mh_self_attention = Multi_head_attention(
-            embed_size//attention_heads, embed_size, block_size, attention_heads, dropout)
-        self.attn_norm = nn.LayerNorm(embed_size)
-        self.ffn = FeedForward(embed_size)
-        self.ffn_norm = nn.LayerNorm(embed_size)
+        self.pe = PositionalEncoding(embed_size)
+        self.tb = Transformer_block(embed_size, block_size, attention_heads, dropout, device)
         self.lm_head = nn.Linear(embed_size, vocab_size)
 
     def forward(self, idx, targets=None):
@@ -28,24 +23,9 @@ class Transformer_Model(nn.Module):
 
         # Positional Encoding
         # (T, E), B gets broadcasted from pe + x
-        pe = self.pe(torch.arange(idx.shape[1], device=self.device))
-        x = tok_embeddings + pe
+        x = self.pe(tok_embeddings)
 
-        # Masked multi-head self attention
-        resid_x = x
-        x = self.masked_mh_self_attention(x)
-
-        # Add & Norm
-        x = self.attn_norm(x)
-        x = x + resid_x
-
-        # Feedforward Network
-        resid_x = x
-        x = self.ffn(x)  # (B, T, H) where h is hidden dim for
-
-        # add & norm
-        x = self.ffn_norm(x)
-        x = x + resid_x
+        x = self.tb(x)
 
         logits = self.lm_head(x)  # (B, T, V)
 
@@ -85,3 +65,5 @@ class Transformer_Model(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1)
 
         return idx  # We return (B, T + max_new_tokens)
+
+
