@@ -43,7 +43,7 @@ def train_distributed(config):
         pass
 
     data_loader = DataLoader(train_dataset, shuffle=False, sampler = DistributedSampler(train_dataset, shuffle=True))
-    model = Model()
+    model = BigramModel()
 
     if os.path.exists('latest_checkpoint.pth'):
         model.load_state_dict(torch.load('latest_checkpoint.pth'))
@@ -52,17 +52,26 @@ def train_distributed(config):
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr, eps=1e-9)
     loss_fn = torch.nn.CrossEntropyLoss()
 
+    step_number = 0
+
     for epoch in range(config.num_epochs):
         for data, labels in data_loader:
-            loss = loss_fn(model(data), labels)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            if (step_number + 1) % 100 != 0 and not last_step: # Accumalate gradients for 100 steps
+                with model.no_sync(): # disable gradients synchronizing
+                    loss = loss_fn(model(data), labels)
+                    loss.backward() # localized gradient accumulation, no updates
+            else:
+                loss = loss_fn(model(data), labels)
+                loss.backward() # This calls the gradient synchronization 
+                optimizer.step() # update the weights across all devices
+                optimizer.zero_grad()
 
             if global_rank == 0:
                 # collect_statistics()
                 # W&B etc.
                 pass
+
+            step_number += 1
         
         if global_rank == 0:
             torch.save(model.state_dict(), 'latest_checkpoint.pth')
