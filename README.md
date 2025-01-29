@@ -1,6 +1,6 @@
 # Generatively Pretrained Transformer Project
 
-This project is dedicated to building a Generatively Pretrained Transformer (GPT) inspired by the seminal paper "Attention is All You Need" and the advancements seen in OpenAI's GPT-2 and GPT-3 models. Our journey explores the intricate connections to ChatGPT, a model that has significantly impacted natural language processing and understanding. In a twist of meta-learning, we've also incorporated GitHub Copilot, a tool based on GPT, to assist in developing parts of this GPT model.
+This project is dedicated to building a Generatively Pretrained Transformer (GPT) inspired by the seminal paper "Attention is All You Need" and the advancements seen in OpenAI's GPT-2 and GPT-3 models. Our journey explores the intricate connections to ChatGPT, a model that has significantly impacted natural language processing and understanding. 
 
 ## Background
 
