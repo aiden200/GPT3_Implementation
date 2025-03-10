@@ -1,6 +1,10 @@
 # Generatively Pretrained Transformer Project
 
-This project is dedicated to building a Generatively Pretrained Transformer (GPT) inspired by the seminal paper "Attention is All You Need" and the advancements seen in OpenAI's GPT-2 and GPT-3 models. Our journey explores the intricate connections to ChatGPT, a model that has significantly impacted natural language processing and understanding. 
+<div align="center">
+    <img src="assests/gpt3.png">
+</div>
+
+This project is dedicated to building a Generatively Pretrained Transformer (GPT) inspired by the seminal paper "Attention is All You Need" and the advancements seen in OpenAI's GPT-2 and GPT-3 models. Our journey explores the intricate connections to ChatGPT, a model that has significantly impacted natural language processing and understanding.
 
 ## Background
 
@@ -43,16 +47,18 @@ This project focuses on training a decoder only Transformer model to predict cha
 - **Attention Heads (`attention_heads`)**: Our model uses 6 attention heads in the multi-head attention mechanism.
 - **Dropout (`dropout`)**: A dropout rate of 0.2 is used to prevent overfitting by randomly setting a fraction of the input units to 0 during training.
 
-
 To train the model, run:
+
 ```bash
 python train.py
 ```
 
 ## Training Data
+
 We use a text dataset for training, focusing on character-by-character prediction. Our dataset comprises dialogues from a play, where each character's speech acts as a sequence for the model to learn from. The model learns to predict each character based on the sequence of characters that precedes it, effectively learning the structure and pattern of the language in the dataset. There are around 10k characters.
 
 ## Credits
+
 This project was inspired by the work of Andrej Karpathy, particularly his ["makemore" series](https://www.youtube.com/watch?v=kCc8FmEb1nY&ab_channel=AndrejKarpathy) on YouTube. His teachings on autoregressive language modeling and PyTorch are the best i've seen.
 
 Additionally, this project owes its inception to the foundational works of [Attention is All You Need](https://arxiv.org/abs/1706.03762) and the development of GPT-2 and GPT-3 by OpenAI.
